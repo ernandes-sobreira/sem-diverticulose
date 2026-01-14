@@ -1,1 +1,1915 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DivertiControl — Diário & Alerta de Crise</title>
+  <style>
+    :root{
+      --bg:#070A12;
+      --panel:#0E1424;
+      --panel2:#0B1020;
+      --card:#101A33;
+      --card2:#0D1630;
+      --text:#EAF0FF;
+      --muted:#A9B5D6;
+      --line:rgba(255,255,255,.10);
+      --good:#1EE3A0;
+      --warn:#FFB020;
+      --bad:#FF3D71;
+      --info:#4DA3FF;
+      --vio:#9B5CFF;
+      --pink:#FF4FD8;
+      --shadow: 0 14px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(155,92,255,.35), transparent 55%),
+                  radial-gradient(900px 500px at 90% 0%, rgba(77,163,255,.25), transparent 55%),
+                  radial-gradient(800px 600px at 30% 110%, rgba(255,79,216,.15), transparent 60%),
+                  linear-gradient(180deg, #060814, #050613 40%, #070A12);
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:var(--info);text-decoration:none}
+    header{
+      position:sticky;top:0;z-index:9;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(7,10,18,.92), rgba(7,10,18,.65));
+      border-bottom:1px solid var(--line);
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .top{
+      display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    }
+    .brand{
+      display:flex;gap:12px;align-items:center;
+    }
+    .logo{
+      width:44px;height:44px;border-radius:14px;
+      background: conic-gradient(from 210deg, var(--good), var(--info), var(--vio), var(--pink), var(--good));
+      box-shadow: 0 10px 30px rgba(155,92,255,.25);
+      position:relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute;inset:8px;
+      border-radius:12px;
+      background: rgba(7,10,18,.75);
+      border:1px solid rgba(255,255,255,.15);
+    }
+    .title h1{margin:0;font-size:18px;letter-spacing:.3px}
+    .title p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+    .pillrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 12px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(16,26,51,.55);
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      font-size:12.5px;color:var(--muted);
+    }
+    .pill strong{color:var(--text);font-weight:700}
+    .btn{
+      border:none;cursor:pointer;color:var(--text);
+      border-radius:14px;padding:10px 12px;
+      background: linear-gradient(180deg, rgba(77,163,255,.22), rgba(155,92,255,.14));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 14px 32px rgba(0,0,0,.35);
+      font-weight:700;
+    }
+    .btn:hover{transform: translateY(-1px)}
+    .btn:active{transform: translateY(0px);opacity:.95}
+    .btn.ghost{
+      background: rgba(16,26,51,.35);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:none;font-weight:700
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,61,113,.28), rgba(255,61,113,.12));
+      border:1px solid rgba(255,61,113,.35);
+    }
+    .btn.good{
+      background: linear-gradient(180deg, rgba(30,227,160,.22), rgba(30,227,160,.10));
+      border:1px solid rgba(30,227,160,.32);
+    }
+    .tabs{
+      display:flex;gap:10px;flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .tab{
+      padding:10px 12px;border-radius:14px;
+      background: rgba(16,26,51,.32);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+      cursor:pointer;
+      font-weight:800;
+      font-size:12.5px;
+      user-select:none;
+    }
+    .tab.active{
+      color:var(--text);
+      background: linear-gradient(180deg, rgba(155,92,255,.30), rgba(77,163,255,.14));
+      border:1px solid rgba(155,92,255,.35);
+      box-shadow: 0 10px 28px rgba(155,92,255,.18);
+    }
 
+    main{padding:14px 0 40px}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(16,26,51,.55), rgba(13,22,48,.40));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    .card h2{
+      margin:0 0 8px;
+      font-size:14px;letter-spacing:.2px
+    }
+    .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.4}
+    .subgrid{
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px
+    }
+    @media (max-width:560px){.subgrid{grid-template-columns:1fr}}
+    .metric{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(11,16,32,.55);
+    }
+    .metric .k{font-size:12px;color:var(--muted);font-weight:700}
+    .metric .v{font-size:22px;font-weight:900;margin-top:6px}
+    .bar{
+      height:10px;border-radius:999px;background: rgba(255,255,255,.10);
+      overflow:hidden;margin-top:10px
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--good), var(--warn), var(--bad));
+      border-radius:999px
+    }
+
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+    label{font-size:12px;color:var(--muted);font-weight:800}
+    input, select, textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(7,10,18,.55);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:90px;resize:vertical}
+    .formgrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width:720px){.formgrid{grid-template-columns:1fr}}
+    .hint{
+      margin-top:8px;
+      font-size:12.5px;color:var(--muted);
+      border-left:3px solid rgba(77,163,255,.5);
+      padding-left:10px
+    }
+    .list{
+      margin-top:10px;
+      display:flex;flex-direction:column;gap:10px
+    }
+    .item{
+      padding:12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(11,16,32,.50);
+      display:flex;gap:10px;justify-content:space-between;align-items:flex-start;
+    }
+    .item .left{display:flex;gap:10px;align-items:flex-start}
+    .badge{
+      font-size:11.5px;font-weight:900;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(16,26,51,.35);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .badge.good{color:#06150E;background: rgba(30,227,160,.95);border-color:rgba(30,227,160,.8)}
+    .badge.warn{color:#1B0F00;background: rgba(255,176,32,.95);border-color:rgba(255,176,32,.8)}
+    .badge.bad{color:#1B0007;background: rgba(255,61,113,.95);border-color:rgba(255,61,113,.8)}
+    .badge.info{color:#00121F;background: rgba(77,163,255,.95);border-color:rgba(77,163,255,.8)}
+    .item h3{margin:0;font-size:13.5px}
+    .item .meta{margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.35}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .mini{
+      padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
+      background: rgba(16,26,51,.30);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:900;font-size:12px
+    }
+    .mini:hover{transform: translateY(-1px)}
+    .mini.danger{border-color:rgba(255,61,113,.35);background: rgba(255,61,113,.12)}
+    .mini.good{border-color:rgba(30,227,160,.30);background: rgba(30,227,160,.10)}
+    .mini.info{border-color:rgba(77,163,255,.30);background: rgba(77,163,255,.10)}
+    .mini.warn{border-color:rgba(255,176,32,.30);background: rgba(255,176,32,.10)}
+    .sep{height:1px;background: var(--line);margin:12px 0}
+    .quote{
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(155,92,255,.22), rgba(77,163,255,.10));
+      border:1px solid rgba(155,92,255,.28);
+      padding:12px;
+      display:flex;gap:10px;align-items:flex-start
+    }
+    .quote b{color:var(--text)}
+    .small{font-size:12.5px;color:var(--muted);line-height:1.35}
+    .warnbox{
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,61,113,.18), rgba(255,61,113,.08));
+      border:1px solid rgba(255,61,113,.30);
+      padding:12px;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      padding:2px 6px;border-radius:8px;color:var(--text);font-size:12px
+    }
+    .footer{
+      margin-top:12px;color:var(--muted);font-size:12px
+    }
+    .hide{display:none !important}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>DivertiControl</h1>
+          <p>Diário inteligente + alerta precoce de crise — simples, prático e sem frescura.</p>
+        </div>
+      </div>
+
+      <div class="pillrow">
+        <div class="pill"><span>📅</span><strong id="todayLabel">—</strong></div>
+        <div class="pill"><span>⚡</span><strong id="riskLabel">Risco: —</strong></div>
+        <button class="btn" id="quickAddBtn">+ Registro rápido</button>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <div class="tab active" data-tab="home" role="tab">🏠 Painel</div>
+      <div class="tab" data-tab="food" role="tab">🍽️ Alimentação</div>
+      <div class="tab" data-tab="symptoms" role="tab">🩺 Sintomas</div>
+      <div class="tab" data-tab="poop" role="tab">💩 Cocô</div>
+      <div class="tab" data-tab="crisis" role="tab">🔥 Crise</div>
+      <div class="tab" data-tab="guide" role="tab">🧭 Guia</div>
+      <div class="tab" data-tab="settings" role="tab">⚙️ Ajustes</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section id="tab-home">
+    <div class="grid">
+      <div class="card">
+        <h2>Seu radar intestinal (hoje)</h2>
+        <p>O app calcula um <b>score de risco (0–100)</b> com base em constipação, dor, febre, alimentos de risco, flatulência e histórico recente.</p>
+
+        <div class="subgrid">
+          <div class="metric">
+            <div class="k">Score de risco</div>
+            <div class="v" id="riskScore">—</div>
+            <div class="bar"><div id="riskBar"></div></div>
+            <div class="small" id="riskMeaning" style="margin-top:8px">—</div>
+          </div>
+
+          <div class="metric">
+            <div class="k">Frase do dia</div>
+            <div class="v" style="font-size:15px" id="motivation">—</div>
+            <div class="small" style="margin-top:8px">Você não “tem azar”. Você tem padrão. Padrão dá pra controlar.</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="quote">
+          <div style="font-size:18px">🧠</div>
+          <div>
+            <div class="small"><b>Regra de ouro:</b> para você, “fibra crua” pode piorar. O foco é <b>ritmo intestinal</b> + <b>fibras solúveis/cozidas</b> e evitar gatilhos.</div>
+            <div class="small" style="margin-top:6px">Se aparecer <b>febre, dor forte progressiva, vômitos, sangue nas fezes</b> → não brinca: procure avaliação.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Alertas rápidos</h2>
+        <div id="alertsBox" class="list"></div>
+
+        <div class="sep"></div>
+
+        <h2>Resumo do dia</h2>
+        <div class="list" id="daySummary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOD -->
+  <section id="tab-food" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>🍽️ Alimentação por hora (com alertas)</h2>
+        <p>Registre o que comeu e a quantidade. O sistema classifica e explica o risco. Você pode personalizar o banco de alimentos em <b>Ajustes</b>.</p>
+
+        <div class="formgrid" style="margin-top:10px">
+          <div>
+            <label>Data</label>
+            <input type="date" id="foodDate">
+          </div>
+          <div>
+            <label>Hora</label>
+            <input type="time" id="foodTime">
+          </div>
+          <div>
+            <label>Alimento (sugestão automática)</label>
+            <input id="foodName" placeholder="Ex: frango empanado, pizza, abóbora cozida...">
+            <div class="hint">Dica: digite e escolha. O app já sabe “gorduroso/ultraprocessado/fermentável”.</div>
+          </div>
+          <div>
+            <label>Quantidade (g)</label>
+            <input type="number" id="foodGrams" min="0" step="1" placeholder="Ex: 180">
+          </div>
+          <div>
+            <label>Observações (opcional)</label>
+            <input id="foodNotes" placeholder="Ex: comi rápido, estava estressado, comi tarde...">
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:10px">
+            <button class="btn good" id="addFoodBtn" style="width:100%">Salvar alimento</button>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <h2>Registros</h2>
+        <div class="list" id="foodList"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧪 Interpretação rápida</h2>
+        <div class="small">O app marca riscos comuns em diverticulose/diverticulite:</div>
+        <div class="list" style="margin-top:10px">
+          <div class="item">
+            <div class="left">
+              <span class="badge bad">ALTO</span>
+              <div>
+                <h3>Gorduroso / empanado / fritura</h3>
+                <div class="meta">Pode piorar inflamação, refluxo e motilidade. Atenção nas próximas 6–24h.</div>
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <div class="left">
+              <span class="badge warn">MÉDIO</span>
+              <div>
+                <h3>Fermentável (FODMAP) / gases</h3>
+                <div class="meta">Pode aumentar estufamento e pressão intestinal (gatilho indireto).</div>
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <div class="left">
+              <span class="badge info">OBS</span>
+              <div>
+                <h3>Fibra crua pode ser ruim (no seu caso)</h3>
+                <div class="meta">Muita gente melhora com fibra, mas você descreveu piora com folhas cruas — é comum. Prefira versões cozidas/solúveis.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="warnbox">
+          <div style="font-weight:900">🚨 Red flags</div>
+          <div class="small" style="margin-top:6px">Febre, dor forte/progressiva, vômitos persistentes, sangue nas fezes, desmaio, piora rápida → procurar atendimento.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYMPTOMS -->
+  <section id="tab-symptoms" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>🩺 Sintomas (checklist + intensidade)</h2>
+        <p>Marque sintomas do dia. O app usa isso para calcular risco e para te mostrar padrões.</p>
+
+        <div class="formgrid" style="margin-top:10px">
+          <div>
+            <label>Data</label>
+            <input type="date" id="symDate">
+          </div>
+          <div>
+            <label>Hora</label>
+            <input type="time" id="symTime">
+          </div>
+          <div>
+            <label>Intensidade geral (0–10)</label>
+            <input type="number" id="symIntensity" min="0" max="10" step="1" placeholder="0 a 10">
+          </div>
+          <div>
+            <label>Febre?</label>
+            <select id="symFever">
+              <option value="no">Não</option>
+              <option value="yes">Sim</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1">
+            <label>Sintomas (marque)</label>
+            <div class="subgrid" id="symChecklist"></div>
+            <div class="hint">Você pode adicionar/remover itens do checklist em <b>Ajustes</b>.</div>
+          </div>
+          <div style="grid-column:1/-1">
+            <label>Notas</label>
+            <input id="symNotes" placeholder="Ex: piorou após comer X; dor em lado esquerdo; muito gás...">
+          </div>
+          <div style="grid-column:1/-1">
+            <button class="btn good" id="addSymBtn" style="width:100%">Salvar sintomas</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+        <h2>Registros</h2>
+        <div class="list" id="symList"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧠 Leitura clínica simples</h2>
+        <div class="small">
+          O que costuma aumentar risco para diverticulite:
+          <ul>
+            <li>Constipação / esforço evacuatório</li>
+            <li>Dor localizada (principalmente em FIE)</li>
+            <li>Febre</li>
+            <li>Gases e distensão intensos</li>
+            <li>Alimentação gordurosa + baixa hidratação</li>
+          </ul>
+        </div>
+        <div class="sep"></div>
+        <div class="quote">
+          <div style="font-size:18px">🧨</div>
+          <div>
+            <div class="small"><b>Quando você registra, você ganha controle.</b> Sem registro, tudo vira “mistério”.</div>
+            <div class="small" style="margin-top:6px">Meta: reduzir “dias de risco” e aumentar “dias estáveis”.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POOP -->
+  <section id="tab-poop" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>💩 Aba do Cocô (sim, isso aqui previne crise)</h2>
+        <p>Prisāo de ventre é o gatilho mais clássico. O app avisa quando você está entrando em zona de risco.</p>
+
+        <div class="formgrid" style="margin-top:10px">
+          <div>
+            <label>Data</label>
+            <input type="date" id="poopDate">
+          </div>
+          <div>
+            <label>Hora</label>
+            <input type="time" id="poopTime">
+          </div>
+          <div>
+            <label>Escala de Bristol</label>
+            <select id="bristol">
+              <option value="1">1 — bolinhas duras (constipação)</option>
+              <option value="2">2 — salsicha grumosa (constipação)</option>
+              <option value="3">3 — rachaduras (ok)</option>
+              <option value="4">4 — lisa e macia (ideal)</option>
+              <option value="5">5 — pedaços macios (ok)</option>
+              <option value="6">6 — pastosa (diarreia)</option>
+              <option value="7">7 — líquida (diarreia)</option>
+            </select>
+          </div>
+          <div>
+            <label>Esforço para evacuar?</label>
+            <select id="strain">
+              <option value="no">Não</option>
+              <option value="yes">Sim</option>
+            </select>
+          </div>
+          <div>
+            <label>Houve dor ao evacuar?</label>
+            <select id="painPoop">
+              <option value="no">Não</option>
+              <option value="yes">Sim</option>
+            </select>
+          </div>
+          <div>
+            <label>Houve sangue?</label>
+            <select id="blood">
+              <option value="no">Não</option>
+              <option value="yes">Sim</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1">
+            <label>Notas</label>
+            <input id="poopNotes" placeholder="Ex: muito gás; sensação de incompleto; fezes ressecadas...">
+          </div>
+          <div style="grid-column:1/-1">
+            <button class="btn good" id="addPoopBtn" style="width:100%">Salvar evacuação</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+        <h2>Registros</h2>
+        <div class="list" id="poopList"></div>
+      </div>
+
+      <div class="card">
+        <h2>⚠️ Alertas intestinais</h2>
+        <div class="small" id="constipationHint">—</div>
+        <div class="sep"></div>
+        <div class="item">
+          <div class="left">
+            <span class="badge warn">DICA</span>
+            <div>
+              <h3>Constipação = pré-crise (no seu caso)</h3>
+              <div class="meta">Se o risco subir, o app vai sugerir “plano de prevenção”: hidratação, alimentos mais seguros e rotina.</div>
+            </div>
+          </div>
+        </div>
+        <div class="item">
+          <div class="left">
+            <span class="badge info">OBS</span>
+            <div>
+              <h3>Folhas cruas te fazem mal?</h3>
+              <div class="meta">Não é raro. Você pode focar em fibra solúvel/cozida e ajuste gradual, fora das crises.</div>
+            </div>
+          </div>
+        </div>
+        <div class="warnbox" style="margin-top:10px">
+          <div style="font-weight:900">🚨 Sangue / febre / dor forte</div>
+          <div class="small" style="margin-top:6px">Se aparecer, não trate como “normal”. Avaliação médica é o caminho.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CRISIS -->
+  <section id="tab-crisis" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>🔥 Registro de crise (o ouro do autocontrole)</h2>
+        <p>Quanto mais você registra crise e melhora, mais o app te mostra padrão: gatilhos, tempo de efeito e prevenção.</p>
+
+        <div class="formgrid" style="margin-top:10px">
+          <div>
+            <label>Início (data)</label>
+            <input type="date" id="crisisStartDate">
+          </div>
+          <div>
+            <label>Início (hora)</label>
+            <input type="time" id="crisisStartTime">
+          </div>
+          <div>
+            <label>Melhora/Fim (data)</label>
+            <input type="date" id="crisisEndDate">
+          </div>
+          <div>
+            <label>Melhora/Fim (hora)</label>
+            <input type="time" id="crisisEndTime">
+          </div>
+          <div>
+            <label>Dor máxima (0–10)</label>
+            <input type="number" id="crisisPain" min="0" max="10" step="1" placeholder="0 a 10">
+          </div>
+          <div>
+            <label>Febre?</label>
+            <select id="crisisFever">
+              <option value="no">Não</option>
+              <option value="yes">Sim</option>
+            </select>
+          </div>
+          <div>
+            <label>Remédios usados</label>
+            <input id="crisisMeds" placeholder="Ex: antibiótico X; analgésico Y; antiespasmódico...">
+          </div>
+          <div>
+            <label>Hidratação durante</label>
+            <select id="crisisHydration">
+              <option value="ok">Ok</option>
+              <option value="low">Baixa</option>
+              <option value="high">Alta</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1">
+            <label>O que você comeu/bebeu durante a crise</label>
+            <textarea id="crisisDuring" placeholder="Ex: caldo, arroz, chá, água... e o que piorou"></textarea>
+          </div>
+          <div style="grid-column:1/-1">
+            <label>Possível gatilho (antes da crise)</label>
+            <input id="crisisTrigger" placeholder="Ex: constipação 2 dias + empanado + estresse">
+          </div>
+          <div style="grid-column:1/-1">
+            <button class="btn good" id="addCrisisBtn" style="width:100%">Salvar crise</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+        <h2>Crises registradas</h2>
+        <div class="list" id="crisisList"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧯 O que fazer durante crise (resumo)</h2>
+        <div class="small">
+          <ul>
+            <li><b>Evitar</b>: gorduras, ultraprocessados, álcool, excesso de fibra crua.</li>
+            <li><b>Preferir</b>: alimentos leves e bem tolerados (conforme seu padrão), hidratação fracionada.</li>
+            <li><b>Monitorar</b>: febre, dor progressiva, vômitos, sangue.</li>
+          </ul>
+        </div>
+        <div class="sep"></div>
+        <div class="warnbox">
+          <div style="font-weight:900">🚨 Quando é “médico agora”</div>
+          <div class="small" style="margin-top:6px">
+            Dor forte que piora, febre, vômitos, fraqueza intensa, sangue nas fezes, barriga muito rígida, piora rápida.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUIDE -->
+  <section id="tab-guide" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>🧭 Guia prático (prevenção + ação)</h2>
+        <p>Sem papo furado: é rotina. A meta é manter o intestino em paz e evitar constipação + gatilhos.</p>
+
+        <div class="list" style="margin-top:12px">
+          <div class="item">
+            <div class="left">
+              <span class="badge good">PREVENÇÃO</span>
+              <div>
+                <h3>1) Rotina intestinal (o pilar)</h3>
+                <div class="meta">Evitar ficar 48h+ sem evacuar. Se isso acontece com frequência, seu risco sobe muito.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="left">
+              <span class="badge good">PREVENÇÃO</span>
+              <div>
+                <h3>2) Fibra: para você, do jeito certo</h3>
+                <div class="meta">Se folha crua te derruba, não é “frescura”. Ajuste com fibra solúvel/cozida fora das crises.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="left">
+              <span class="badge warn">ATENÇÃO</span>
+              <div>
+                <h3>3) Gordura e empanado: gatilho comum</h3>
+                <div class="meta">Alto risco nas próximas 6–24h. O app mostra isso quando você registra.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="left">
+              <span class="badge info">BÔNUS</span>
+              <div>
+                <h3>4) Estresse + comer rápido + pouca água</h3>
+                <div class="meta">Não é psicológico: altera motilidade e aumenta gases. Registre “como comeu” nas notas.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+        <div class="quote">
+          <div style="font-size:18px">🏁</div>
+          <div>
+            <div class="small"><b>Seu objetivo:</b> diminuir dias “amarelos/vermelhos”.</div>
+            <div class="small" style="margin-top:6px">O app não te julga. Ele te dá clareza.</div>
+          </div>
+        </div>
+
+        <div class="footer">
+          Dica: use <span class="kbd">Exportar backup</span> em Ajustes 1x por semana.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📌 Miniplano de ação (quando risco sobe)</h2>
+        <div class="list" id="actionPlan"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" class="hide">
+    <div class="grid">
+      <div class="card">
+        <h2>⚙️ Ajustes do seu sistema</h2>
+        <p>Personalize: alimentos, checklist de sintomas, e faça backup. Tudo fica no seu navegador (localStorage).</p>
+
+        <div class="sep"></div>
+
+        <h2>🍽️ Banco de alimentos (personalizável)</h2>
+        <div class="formgrid">
+          <div>
+            <label>Nome do alimento</label>
+            <input id="newFoodName" placeholder="Ex: frango empanado">
+          </div>
+          <div>
+            <label>Categoria de risco</label>
+            <select id="newFoodRisk">
+              <option value="high">Alto (gorduroso/ultraprocessado/gatilho)</option>
+              <option value="mid">Médio (fermentável/gases)</option>
+              <option value="low">Baixo (seguro)</option>
+              <option value="protect">Protetor (geralmente bem tolerado)</option>
+            </select>
+          </div>
+          <div>
+            <label>Tags (separadas por vírgula)</label>
+            <input id="newFoodTags" placeholder="Ex: gorduroso, empanado, ultraprocessado">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn good" id="addFoodDbBtn" style="width:100%">Adicionar ao banco</button>
+          </div>
+        </div>
+
+        <div class="hint">Você pode colocar seus “vilões” e seus “seguros”. O app usa isso nos alertas.</div>
+        <div class="list" id="foodDbList"></div>
+
+        <div class="sep"></div>
+
+        <h2>🩺 Checklist de sintomas (personalizável)</h2>
+        <div class="formgrid">
+          <div>
+            <label>Novo sintoma</label>
+            <input id="newSymItem" placeholder="Ex: dor em FIE (lado esquerdo)">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn good" id="addSymItemBtn" style="width:100%">Adicionar</button>
+          </div>
+        </div>
+        <div class="list" id="symItemsList"></div>
+
+        <div class="sep"></div>
+
+        <h2>📦 Backup e segurança</h2>
+        <div class="row">
+          <button class="btn" id="exportBtn">Exportar JSON</button>
+          <button class="btn ghost" id="importBtn">Importar JSON</button>
+          <button class="btn danger" id="resetBtn">Resetar tudo</button>
+          <input type="file" id="importFile" accept="application/json" class="hide">
+        </div>
+
+        <div class="warnbox">
+          <div style="font-weight:900">Aviso</div>
+          <div class="small" style="margin-top:6px">
+            Este app é educativo e de auto-monitoramento. Se você tiver sinais de gravidade (febre, dor forte progressiva, vômitos, sangue), procure atendimento.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🧾 Registro rápido</h2>
+        <p>Use isso quando não quiser preencher tudo.</p>
+        <div class="formgrid" style="margin-top:10px">
+          <div>
+            <label>Tipo</label>
+            <select id="quickType">
+              <option value="food">🍽️ Alimento</option>
+              <option value="symptom">🩺 Sintoma</option>
+              <option value="poop">💩 Cocô</option>
+              <option value="crisis">🔥 Crise</option>
+            </select>
+          </div>
+          <div>
+            <label>Quando</label>
+            <input type="datetime-local" id="quickWhen">
+          </div>
+          <div style="grid-column:1/-1">
+            <label>Texto livre</label>
+            <textarea id="quickText" placeholder="Ex: 12h comi empanado 180g, 16h gases e dor leve..."></textarea>
+          </div>
+          <div style="grid-column:1/-1">
+            <button class="btn good" id="saveQuickBtn" style="width:100%">Salvar registro rápido</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+        <h2>Histórico rápido</h2>
+        <div class="list" id="quickList"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const fmtDate = (d) => {
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return d;
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const da = String(dt.getDate()).padStart(2,'0');
+    return `${da}/${m}/${y}`;
+  };
+  const pad2 = (n)=>String(n).padStart(2,'0');
+  const nowISODate = () => {
+    const n = new Date();
+    return `${n.getFullYear()}-${pad2(n.getMonth()+1)}-${pad2(n.getDate())}`;
+  };
+  const nowISOTime = () => {
+    const n = new Date();
+    return `${pad2(n.getHours())}:${pad2(n.getMinutes())}`;
+  };
+  const nowISODatetimeLocal = () => {
+    const n = new Date();
+    return `${n.getFullYear()}-${pad2(n.getMonth()+1)}-${pad2(n.getDate())}T${pad2(n.getHours())}:${pad2(n.getMinutes())}`;
+  };
+  const uid = () => Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+
+  // ---------- Default DB ----------
+  const DEFAULT_FOOD_DB = [
+    {name:"frango empanado", risk:"high", tags:["gorduroso","empanado","ultraprocessado"], note:"Alto risco: gordura/empanado pode piorar inflamação e motilidade."},
+    {name:"pizza", risk:"high", tags:["gorduroso","ultraprocessado"], note:"Alto risco: gordura + processamento."},
+    {name:"hambúrguer", risk:"high", tags:["gorduroso","ultraprocessado"], note:"Alto risco: gordura + ultraprocessado."},
+    {name:"fritura", risk:"high", tags:["gorduroso"], note:"Alto risco: evite em fases sensíveis."},
+    {name:"linguiça", risk:"high", tags:["gorduroso","processado"], note:"Alto risco: processado e gorduroso."},
+    {name:"queijo em excesso", risk:"mid", tags:["gorduroso","laticínio"], note:"Pode piorar dependendo do seu padrão."},
+    {name:"feijão", risk:"mid", tags:["fermentável","gases"], note:"Pode aumentar gases/distensão."},
+    {name:"cebola", risk:"mid", tags:["fermentável","fodmap"], note:"Pode fermentar e dar gases."},
+    {name:"alho", risk:"mid", tags:["fermentável","fodmap"], note:"Pode fermentar e dar gases."},
+    {name:"refrigerante", risk:"mid", tags:["gases","ultraprocessado"], note:"Pode piorar distensão."},
+    {name:"álcool", risk:"high", tags:["inflamatório"], note:"Pode piorar inflamação e irritar mucosa."},
+
+    {name:"arroz branco", risk:"low", tags:["leve"], note:"Geralmente bem tolerado."},
+    {name:"caldo", risk:"low", tags:["leve","hidratação"], note:"Útil durante crise (se tolerado)."},
+    {name:"banana", risk:"low", tags:["leve"], note:"Geralmente ok (observe seu padrão)."},
+    {name:"abóbora cozida", risk:"protect", tags:["solúvel","cozido"], note:"Boa opção: fibra mais gentil."},
+    {name:"chuchu cozido", risk:"protect", tags:["leve","cozido"], note:"Boa opção: baixo risco."},
+    {name:"cenoura cozida", risk:"protect", tags:["cozido","solúvel"], note:"Boa opção para rotina, fora de crise."},
+    {name:"aveia fina", risk:"protect", tags:["solúvel"], note:"Fibra solúvel pode ajudar (introduza devagar)."},
+    {name:"iogurte natural", risk:"low", tags:["laticínio"], note:"Pode ajudar alguns; piorar outros — registre."},
+    {name:"água", risk:"protect", tags:["hidratação"], note:"Hidratação é prevenção."},
+
+    {name:"alface", risk:"mid", tags:["fibra crua"], note:"No seu caso pode piorar. Registre e confirme padrão."},
+    {name:"couve crua", risk:"mid", tags:["fibra crua","gases"], note:"Pode piorar gases/distensão."}
+  ];
+
+  const DEFAULT_SYM_ITEMS = [
+    "Dor abdominal",
+    "Dor em FIE (lado esquerdo)",
+    "Estufamento/distensão",
+    "Flatulência excessiva",
+    "Náusea",
+    "Sensação de peso",
+    "Sensação de evacuação incompleta",
+    "Cólica",
+    "Perda de apetite"
+  ];
+
+  const DEFAULT_MOTIVATIONS = [
+    "Seu intestino fala. Hoje você aprende a ouvir.",
+    "Crise não é azar. É padrão — e padrão dá pra controlar.",
+    "Registro é poder. Poder é prevenção.",
+    "Menos mistério, mais dados. Você manda no processo.",
+    "Consistência vence crise. Um passo por vez."
+  ];
+
+  // ---------- Storage ----------
+  const KEY = "divertiControl_v1";
+  const load = () => {
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    } catch(e){
+      console.error(e);
+      return null;
+    }
+  };
+  const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+
+  const state = load() || {
+    foodDb: DEFAULT_FOOD_DB,
+    symItems: DEFAULT_SYM_ITEMS,
+    logs: {
+      foods: [],
+      symptoms: [],
+      poops: [],
+      crises: [],
+      quick: []
+    }
+  };
+
+  // ---------- Risk engine ----------
+  function riskFromFood(food){
+    const r = food.riskResolved;
+    if(r === "high") return 18;
+    if(r === "mid") return 9;
+    if(r === "low") return 2;
+    if(r === "protect") return -4;
+    return 0;
+  }
+
+  function riskFromSymptoms(sym){
+    let score = 0;
+    const intensity = Number(sym.intensity || 0);
+    score += Math.min(20, intensity * 2);
+    if(sym.fever === "yes") score += 25;
+    const picked = sym.items || [];
+    const hasLeftPain = picked.some(x => x.toLowerCase().includes("fie") || x.toLowerCase().includes("esquerdo"));
+    const hasGas = picked.some(x => x.toLowerCase().includes("flatul") || x.toLowerCase().includes("estufa") || x.toLowerCase().includes("dist"));
+    if(hasLeftPain) score += 10;
+    if(hasGas) score += 6;
+    return score;
+  }
+
+  function lastPoopDate(){
+    const poops = [...state.logs.poops].sort((a,b)=> (a.dt||"").localeCompare(b.dt||""));
+    if(poops.length===0) return null;
+    return poops[poops.length-1].dt;
+  }
+
+  function constipationRisk(){
+    const lp = lastPoopDate();
+    if(!lp) return 10; // sem dado -> risco moderado
+    const last = new Date(lp);
+    const now = new Date();
+    const diffH = (now - last) / (1000*60*60);
+    let score = 0;
+    if(diffH >= 24) score += 8;
+    if(diffH >= 48) score += 18;
+    if(diffH >= 72) score += 28;
+
+    // bristol constipação recente
+    const recent = [...state.logs.poops].sort((a,b)=> (b.dt||"").localeCompare(a.dt||"")).slice(0,3);
+    if(recent.some(p => Number(p.bristol)<=2)) score += 10;
+    if(recent.some(p => p.strain==="yes")) score += 6;
+    return score;
+  }
+
+  function crisisRecencyRisk(){
+    const crises = [...state.logs.crises].sort((a,b)=> (b.start||"").localeCompare(a.start||""));
+    if(crises.length===0) return 0;
+    const last = new Date(crises[0].start);
+    const now = new Date();
+    const diffD = (now - last) / (1000*60*60*24);
+    if(diffD <= 3) return 18;
+    if(diffD <= 7) return 10;
+    if(diffD <= 14) return 6;
+    return 2;
+  }
+
+  function computeTodayRisk(){
+    const today = nowISODate();
+    const foodsToday = state.logs.foods.filter(f => (f.date === today));
+    const symToday = state.logs.symptoms.filter(s => (s.date === today));
+
+    let score = 0;
+
+    // foods weigh
+    foodsToday.forEach(f => score += riskFromFood(f));
+
+    // symptoms weigh (use last symptom entry of day as strongest)
+    if(symToday.length){
+      const last = [...symToday].sort((a,b)=> (a.time||"").localeCompare(b.time||"")).pop();
+      score += riskFromSymptoms(last);
+    }
+
+    // poop baseline/constipation
+    score += constipationRisk();
+
+    // recent crises
+    score += crisisRecencyRisk();
+
+    // clamp
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    return score;
+  }
+
+  function riskBucket(score){
+    if(score <= 24) return {label:"🟢 Estável", color:"good", text:"Você está bem. Mantenha rotina intestinal e evite gatilhos óbvios."};
+    if(score <= 54) return {label:"🟡 Atenção", color:"warn", text:"Zona de atenção. Ajuste alimentação, hidratação e monitore evacuação."};
+    return {label:"🔴 Risco alto", color:"bad", text:"Risco alto de crise. Simplifique dieta, trate constipação e monitore sinais de gravidade."};
+  }
+
+  // ---------- Food risk resolving ----------
+  function findFoodInDb(name){
+    const n = (name||"").trim().toLowerCase();
+    if(!n) return null;
+    return state.foodDb.find(x => x.name.toLowerCase() === n) || null;
+  }
+
+  function inferRisk(name){
+    const n = (name||"").toLowerCase();
+    // crude heuristics
+    if(/empan|frit|bacon|hamb|pizza|salgad|lingui|calab|camarão empan|pastel|batata frita|maionese/.test(n)) return {risk:"high", tags:["gorduroso"], note:"Inferido: padrão de gordura/ultraprocessado."};
+    if(/refriger|feij|cebol|alho|brócol|couve|café em excesso|leite/.test(n)) return {risk:"mid", tags:["fermentável"], note:"Inferido: pode aumentar gases/distensão em algumas pessoas."};
+    if(/água|caldo|arroz|banana|batata coz|chuchu|abóbora|cenoura coz|chá/.test(n)) return {risk:"protect", tags:["leve"], note:"Inferido: geralmente mais seguro."};
+    return {risk:"mid", tags:["desconhecido"], note:"Sem classificação. Se isso sempre te derruba, adicione no banco com risco alto."};
+  }
+
+  function riskBadge(r){
+    if(r==="high") return ["ALTO","bad"];
+    if(r==="mid") return ["MÉDIO","warn"];
+    if(r==="low") return ["BAIXO","info"];
+    if(r==="protect") return ["PROTETOR","good"];
+    return ["OBS","info"];
+  }
+
+  // ---------- Render ----------
+  function setDefaults(){
+    $("todayLabel").textContent = fmtDate(new Date());
+    $("foodDate").value = nowISODate();
+    $("foodTime").value = nowISOTime();
+    $("symDate").value = nowISODate();
+    $("symTime").value = nowISOTime();
+    $("poopDate").value = nowISODate();
+    $("poopTime").value = nowISOTime();
+    $("crisisStartDate").value = nowISODate();
+    $("crisisStartTime").value = nowISOTime();
+    $("quickWhen").value = nowISODatetimeLocal();
+  }
+
+  function renderMotivation(){
+    const idx = Math.floor(Math.random()*DEFAULT_MOTIVATIONS.length);
+    $("motivation").textContent = DEFAULT_MOTIVATIONS[idx];
+  }
+
+  function renderHome(){
+    const score = computeTodayRisk();
+    const b = riskBucket(score);
+
+    $("riskScore").textContent = score;
+    $("riskBar").style.width = score + "%";
+    $("riskMeaning").textContent = b.label + " — " + b.text;
+    $("riskLabel").textContent = `Risco: ${b.label}`;
+
+    // alerts
+    const alerts = [];
+    const today = nowISODate();
+
+    // constipation
+    const lp = lastPoopDate();
+    if(!lp){
+      alerts.push({kind:"warn", title:"Sem registro de evacuação", text:"Sem dados, o app assume risco moderado. Registre 💩 para melhorar previsões."});
+    } else {
+      const diffH = (new Date() - new Date(lp)) / (1000*60*60);
+      if(diffH >= 48){
+        alerts.push({kind:"bad", title:"Constipação forte", text:`Última evacuação há ~${Math.round(diffH)}h. Isso aumenta MUITO risco de crise.`});
+      } else if(diffH >= 24){
+        alerts.push({kind:"warn", title:"Constipação moderada", text:`Última evacuação há ~${Math.round(diffH)}h. Atenção ao ritmo intestinal.`});
+      }
+    }
+
+    // foods high risk today
+    const foodsToday = state.logs.foods.filter(f=>f.date===today);
+    const highs = foodsToday.filter(f=>f.riskResolved==="high");
+    if(highs.length){
+      alerts.push({kind:"warn", title:"Alimento de alto risco hoje", text:`Você registrou ${highs.length} item(ns) “ALTO” hoje. Monitorar próximas 6–24h.`});
+    }
+
+    // symptoms with fever today
+    const symToday = state.logs.symptoms.filter(s=>s.date===today);
+    if(symToday.some(s=>s.fever==="yes")){
+      alerts.push({kind:"bad", title:"Febre registrada", text:"Febre + dor pode indicar piora. Se persistir ou piorar, procure atendimento."});
+    }
+
+    // blood in poop recent
+    const recentPoop = [...state.logs.poops].sort((a,b)=> (b.dt||"").localeCompare(a.dt||"")).slice(0,3);
+    if(recentPoop.some(p=>p.blood==="yes")){
+      alerts.push({kind:"bad", title:"Sangue nas fezes", text:"Não trate como normal. Se repetir ou com dor/febre, procure avaliação."});
+    }
+
+    // fill alerts box
+    const box = $("alertsBox");
+    box.innerHTML = "";
+    if(!alerts.length){
+      box.innerHTML = `<div class="item"><div class="left"><span class="badge good">OK</span><div><h3>Nenhum alerta crítico</h3><div class="meta">Continue registrando. Consistência é prevenção.</div></div></div></div>`;
+    } else {
+      alerts.forEach(a=>{
+        const cls = a.kind==="bad" ? "bad" : (a.kind==="warn" ? "warn" : "info");
+        const tag = a.kind==="bad" ? "ALERTA" : (a.kind==="warn" ? "ATENÇÃO" : "INFO");
+        box.insertAdjacentHTML("beforeend", `
+          <div class="item">
+            <div class="left">
+              <span class="badge ${cls}">${tag}</span>
+              <div>
+                <h3>${a.title}</h3>
+                <div class="meta">${a.text}</div>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    // day summary
+    const sum = $("daySummary");
+    sum.innerHTML = "";
+    const lastFood = [...foodsToday].sort((a,b)=>(a.time||"").localeCompare(b.time||"")).pop();
+    const lastSym  = [...symToday].sort((a,b)=>(a.time||"").localeCompare(b.time||"")).pop();
+
+    const badgeFood = lastFood ? riskBadge(lastFood.riskResolved) : null;
+    const badgeSym  = lastSym ? (Number(lastSym.intensity||0)>=6 ? ["FORTE","bad"] : ["LEVE/MÉDIO","warn"]) : null;
+
+    sum.insertAdjacentHTML("beforeend", `
+      <div class="item">
+        <div class="left">
+          <span class="badge info">HOJE</span>
+          <div>
+            <h3>Alimentos registrados: ${foodsToday.length}</h3>
+            <div class="meta">${lastFood ? `Último: <b>${lastFood.name}</b> às ${lastFood.time} — <span class="badge ${badgeFood[1]}">${badgeFood[0]}</span>` : "Nenhum alimento registrado ainda."}</div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    sum.insertAdjacentHTML("beforeend", `
+      <div class="item">
+        <div class="left">
+          <span class="badge info">HOJE</span>
+          <div>
+            <h3>Sintomas registrados: ${symToday.length}</h3>
+            <div class="meta">${lastSym ? `Último: intensidade <b>${lastSym.intensity||0}/10</b> às ${lastSym.time} — <span class="badge ${badgeSym[1]}">${badgeSym[0]}</span>` : "Nenhum sintoma registrado ainda."}</div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // action plan (guide right column)
+    renderActionPlan(score);
+  }
+
+  function renderActionPlan(score){
+    const box = $("actionPlan");
+    box.innerHTML = "";
+    const b = riskBucket(score);
+
+    const items = [];
+    if(score <= 24){
+      items.push({tag:["MANTER","good"], title:"Rotina intestinal", text:"Priorize evacuação regular. Registre 💩 para manter previsibilidade."});
+      items.push({tag:["ALIMENTAÇÃO","info"], title:"Evite extremos", text:"Sem exagero de gordura/ultraprocessado. Prefira o que seu corpo tolera."});
+    } else if(score <= 54){
+      items.push({tag:["HOJE","warn"], title:"Simplificar refeições", text:"Reduza gordura e ultraprocessados. Observe gases e distensão."});
+      items.push({tag:["PRIORIDADE","warn"], title:"Verifique constipação", text:"Se estiver >24h sem evacuar, registre e ajuste rotina/hidratação."});
+      items.push({tag:["MONITORAR","info"], title:"Sintomas", text:"Se dor subir ou aparecer febre, não ignore."});
+    } else {
+      items.push({tag:["AGORA","bad"], title:"Zona de risco", text:"Dieta leve e previsível, fracionada, hidratação constante."});
+      items.push({tag:["ALERTA","bad"], title:"Red flags", text:"Febre, dor progressiva, vômitos, sangue → atendimento."});
+      items.push({tag:["FOCO","warn"], title:"Constipação", text:"Constipação + dor = gatilho clássico. Registre e trate o padrão."});
+    }
+
+    items.forEach(it=>{
+      box.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${it.tag[1]}">${it.tag[0]}</span>
+            <div>
+              <h3>${it.title}</h3>
+              <div class="meta">${it.text}</div>
+            </div>
+          </div>
+        </div>
+      `);
+    });
+
+    box.insertAdjacentHTML("beforeend", `
+      <div class="quote">
+        <div style="font-size:18px">💪</div>
+        <div>
+          <div class="small"><b>${b.label}</b> — você consegue reduzir isso em 48–72h com rotina e registro.</div>
+          <div class="small" style="margin-top:6px">Você não precisa “sofrer no escuro”.</div>
+        </div>
+      </div>
+    `);
+  }
+
+  function renderFoodList(){
+    const list = $("foodList");
+    list.innerHTML = "";
+    const items = [...state.logs.foods].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+    if(!items.length){
+      list.innerHTML = `<div class="item"><div class="left"><span class="badge info">VAZIO</span><div><h3>Nenhum registro</h3><div class="meta">Comece registrando hoje.</div></div></div></div>`;
+      return;
+    }
+    items.forEach(f=>{
+      const [tag, cls] = riskBadge(f.riskResolved);
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${tag}</span>
+            <div>
+              <h3>${f.name} — ${f.grams||0}g</h3>
+              <div class="meta">${fmtDate(f.date)} às ${f.time} • ${f.noteResolved || ""}${f.notes ? `<br><b>Obs:</b> ${escapeHtml(f.notes)}` : ""}</div>
+              <div class="meta" style="margin-top:6px"><b>Tags:</b> ${(f.tagsResolved||[]).join(", ")}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini info" data-edit-food="${f.id}">Editar</button>
+            <button class="mini danger" data-del-food="${f.id}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderSymChecklist(){
+    const box = $("symChecklist");
+    box.innerHTML = "";
+    state.symItems.forEach((s, idx)=>{
+      const id = `symcb_${idx}`;
+      box.insertAdjacentHTML("beforeend", `
+        <label style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(11,16,32,.45)">
+          <input type="checkbox" id="${id}" style="width:18px;height:18px">
+          <span style="color:var(--text);font-weight:800">${escapeHtml(s)}</span>
+        </label>
+      `);
+    });
+  }
+
+  function renderSymList(){
+    const list = $("symList");
+    list.innerHTML = "";
+    const items = [...state.logs.symptoms].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+    if(!items.length){
+      list.innerHTML = `<div class="item"><div class="left"><span class="badge info">VAZIO</span><div><h3>Nenhum sintoma registrado</h3><div class="meta">Registre mesmo quando estiver bem — isso te dá contraste e padrão.</div></div></div></div>`;
+      return;
+    }
+    items.forEach(s=>{
+      const intense = Number(s.intensity||0);
+      const cls = s.fever==="yes" || intense>=7 ? "bad" : (intense>=4 ? "warn" : "good");
+      const tag = s.fever==="yes" ? "FEBRE" : `INT ${intense}/10`;
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${tag}</span>
+            <div>
+              <h3>${fmtDate(s.date)} às ${s.time}</h3>
+              <div class="meta"><b>Itens:</b> ${(s.items||[]).map(escapeHtml).join(", ") || "—"}</div>
+              <div class="meta">${s.notes ? `<b>Obs:</b> ${escapeHtml(s.notes)}` : ""}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini info" data-edit-sym="${s.id}">Editar</button>
+            <button class="mini danger" data-del-sym="${s.id}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderPoopList(){
+    const list = $("poopList");
+    list.innerHTML = "";
+    const items = [...state.logs.poops].sort((a,b)=> (b.dt||"").localeCompare(a.dt||""));
+    if(!items.length){
+      list.innerHTML = `<div class="item"><div class="left"><span class="badge info">VAZIO</span><div><h3>Nenhum registro</h3><div class="meta">Registrar 💩 é o que mais melhora a previsão de crise.</div></div></div></div>`;
+      return;
+    }
+    items.forEach(p=>{
+      const b = Number(p.bristol);
+      const cls = (p.blood==="yes") ? "bad" : (b<=2 ? "warn" : (b>=6 ? "warn" : "good"));
+      const tag = p.blood==="yes" ? "SANGUE" : `BRISTOL ${b}`;
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${tag}</span>
+            <div>
+              <h3>${fmtDate(p.dt.split("T")[0])} às ${p.dt.split("T")[1]}</h3>
+              <div class="meta">Esforço: <b>${p.strain==="yes" ? "Sim" : "Não"}</b> • Dor: <b>${p.pain==="yes" ? "Sim" : "Não"}</b> • Sangue: <b>${p.blood==="yes" ? "Sim" : "Não"}</b></div>
+              <div class="meta">${p.notes ? `<b>Obs:</b> ${escapeHtml(p.notes)}` : ""}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini info" data-edit-poop="${p.id}">Editar</button>
+            <button class="mini danger" data-del-poop="${p.id}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+
+    // constipation hint
+    const lp = lastPoopDate();
+    let text = "Registre sempre que evacuar. O app calcula intervalo e alerta constipação.";
+    if(lp){
+      const diffH = (new Date() - new Date(lp)) / (1000*60*60);
+      if(diffH >= 72) text = `🔴 Faz ~${Math.round(diffH)}h desde a última evacuação. Isso é risco alto para você.`;
+      else if(diffH >= 48) text = `🟠 Faz ~${Math.round(diffH)}h desde a última evacuação. Atenção!`;
+      else if(diffH >= 24) text = `🟡 Faz ~${Math.round(diffH)}h desde a última evacuação. Observe.`;
+      else text = `🟢 Última evacuação há ~${Math.round(diffH)}h. Bom sinal.`;
+    }
+    $("constipationHint").textContent = text;
+  }
+
+  function renderCrisisList(){
+    const list = $("crisisList");
+    list.innerHTML = "";
+    const items = [...state.logs.crises].sort((a,b)=> (b.start||"").localeCompare(a.start||""));
+    if(!items.length){
+      list.innerHTML = `<div class="item"><div class="left"><span class="badge info">VAZIO</span><div><h3>Nenhuma crise registrada</h3><div class="meta">Tomara que siga assim. Mas se tiver, registre: isso te dá controle e padrão.</div></div></div></div>`;
+      return;
+    }
+    items.forEach(c=>{
+      const pain = Number(c.pain||0);
+      const cls = c.fever==="yes" || pain>=7 ? "bad" : (pain>=4 ? "warn" : "good");
+      const tag = c.fever==="yes" ? "FEBRE" : `DOR ${pain}/10`;
+      const startD = c.start.split("T")[0], startT = c.start.split("T")[1];
+      const endLabel = c.end ? `${fmtDate(c.end.split("T")[0])} ${c.end.split("T")[1]}` : "—";
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${tag}</span>
+            <div>
+              <h3>Início: ${fmtDate(startD)} ${startT} • Fim: ${endLabel}</h3>
+              <div class="meta"><b>Gatilho:</b> ${escapeHtml(c.trigger||"—")}</div>
+              <div class="meta"><b>Remédios:</b> ${escapeHtml(c.meds||"—")} • <b>Hidratação:</b> ${escapeHtml(c.hydration||"—")}</div>
+              <div class="meta">${c.during ? `<b>Durante:</b> ${escapeHtml(c.during)}` : ""}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini info" data-edit-crisis="${c.id}">Editar</button>
+            <button class="mini danger" data-del-crisis="${c.id}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderQuickList(){
+    const list = $("quickList");
+    list.innerHTML = "";
+    const items = [...state.logs.quick].sort((a,b)=> (b.when||"").localeCompare(a.when||""));
+    if(!items.length){
+      list.innerHTML = `<div class="item"><div class="left"><span class="badge info">VAZIO</span><div><h3>Nenhum registro rápido</h3><div class="meta">Use quando estiver sem paciência — melhor um registro simples do que nenhum.</div></div></div></div>`;
+      return;
+    }
+    items.forEach(q=>{
+      const map = {food:["🍽️","info"], symptom:["🩺","warn"], poop:["💩","warn"], crisis:["🔥","bad"]};
+      const [emoji, cls] = map[q.type] || ["📝","info"];
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${emoji} ${q.type.toUpperCase()}</span>
+            <div>
+              <h3>${fmtDate(q.when.split("T")[0])} ${q.when.split("T")[1]}</h3>
+              <div class="meta">${escapeHtml(q.text||"—")}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini danger" data-del-quick="${q.id}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderFoodDb(){
+    const list = $("foodDbList");
+    list.innerHTML = "";
+    const items = [...state.foodDb].sort((a,b)=> a.name.localeCompare(b.name));
+    items.forEach(f=>{
+      const [tag, cls] = riskBadge(f.risk);
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge ${cls}">${tag}</span>
+            <div>
+              <h3>${escapeHtml(f.name)}</h3>
+              <div class="meta"><b>Tags:</b> ${(f.tags||[]).map(escapeHtml).join(", ") || "—"}</div>
+              <div class="meta">${escapeHtml(f.note||"")}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini danger" data-del-fooddb="${escapeHtml(f.name)}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderSymItems(){
+    const list = $("symItemsList");
+    list.innerHTML = "";
+    state.symItems.forEach((s, idx)=>{
+      list.insertAdjacentHTML("beforeend", `
+        <div class="item">
+          <div class="left">
+            <span class="badge info">ITEM</span>
+            <div>
+              <h3>${escapeHtml(s)}</h3>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="mini danger" data-del-symitem="${idx}">Excluir</button>
+          </div>
+        </div>
+      `);
+    });
+  }
+
+  function renderAll(){
+    renderMotivation();
+    renderHome();
+    renderSymChecklist();
+    renderFoodList();
+    renderSymList();
+    renderPoopList();
+    renderCrisisList();
+    renderFoodDb();
+    renderSymItems();
+    renderQuickList();
+  }
+
+  // ---------- Input behavior (autocomplete-lite) ----------
+  function setupFoodAutocomplete(){
+    const inp = $("foodName");
+    inp.addEventListener("input", () => {
+      // Simple: show placeholder hint by matching best item in DB
+      const v = inp.value.trim().toLowerCase();
+      if(!v) return;
+      const found = state.foodDb.find(x=> x.name.toLowerCase().startsWith(v));
+      if(found && found.name.toLowerCase() !== v){
+        inp.title = `Sugestão: ${found.name}`;
+      } else {
+        inp.title = "";
+      }
+    });
+  }
+
+  // ---------- CRUD: Foods ----------
+  function addFood(){
+    const date = $("foodDate").value || nowISODate();
+    const time = $("foodTime").value || nowISOTime();
+    const name = ($("foodName").value || "").trim();
+    const grams = Number($("foodGrams").value || 0);
+    const notes = ($("foodNotes").value || "").trim();
+
+    if(!name){
+      alert("Coloque o nome do alimento.");
+      return;
+    }
+
+    const db = findFoodInDb(name);
+    const inferred = db ? null : inferRisk(name);
+
+    const riskResolved = db ? db.risk : inferred.risk;
+    const tagsResolved = db ? (db.tags||[]) : (inferred.tags||[]);
+    const noteResolved = db ? (db.note||"") : (inferred.note||"");
+
+    state.logs.foods.push({
+      id: uid(),
+      date, time,
+      name,
+      grams,
+      notes,
+      riskResolved,
+      tagsResolved,
+      noteResolved
+    });
+    save();
+    $("foodName").value = "";
+    $("foodGrams").value = "";
+    $("foodNotes").value = "";
+    renderHome();
+    renderFoodList();
+  }
+
+  function editFood(id){
+    const f = state.logs.foods.find(x=>x.id===id);
+    if(!f) return;
+
+    const newName = prompt("Editar alimento (nome):", f.name);
+    if(newName === null) return;
+    const name = newName.trim();
+    if(!name) return;
+
+    const newGrams = prompt("Editar quantidade (g):", String(f.grams||0));
+    if(newGrams === null) return;
+    const grams = Number(newGrams||0);
+
+    const newNotes = prompt("Editar observações:", f.notes||"");
+    if(newNotes === null) return;
+
+    const db = findFoodInDb(name);
+    const inferred = db ? null : inferRisk(name);
+
+    f.name = name;
+    f.grams = grams;
+    f.notes = newNotes.trim();
+    f.riskResolved = db ? db.risk : inferred.risk;
+    f.tagsResolved = db ? (db.tags||[]) : (inferred.tags||[]);
+    f.noteResolved = db ? (db.note||"") : (inferred.note||"");
+
+    save();
+    renderHome(); renderFoodList();
+  }
+
+  function deleteFood(id){
+    if(!confirm("Excluir este alimento?")) return;
+    state.logs.foods = state.logs.foods.filter(x=>x.id!==id);
+    save();
+    renderHome(); renderFoodList();
+  }
+
+  // ---------- CRUD: Symptoms ----------
+  function addSymptoms(){
+    const date = $("symDate").value || nowISODate();
+    const time = $("symTime").value || nowISOTime();
+    const intensity = Number($("symIntensity").value || 0);
+    const fever = $("symFever").value || "no";
+    const notes = ($("symNotes").value || "").trim();
+
+    const items = [];
+    state.symItems.forEach((s, idx)=>{
+      const cb = $(`symcb_${idx}`);
+      if(cb && cb.checked) items.push(s);
+    });
+
+    state.logs.symptoms.push({
+      id: uid(),
+      date, time,
+      intensity, fever,
+      items,
+      notes
+    });
+    save();
+
+    $("symIntensity").value = "";
+    $("symFever").value = "no";
+    $("symNotes").value = "";
+    // clear checks
+    state.symItems.forEach((s, idx)=>{
+      const cb = $(`symcb_${idx}`); if(cb) cb.checked = false;
+    });
+
+    renderHome(); renderSymList();
+  }
+
+  function editSym(id){
+    const s = state.logs.symptoms.find(x=>x.id===id);
+    if(!s) return;
+    const intensity = prompt("Intensidade (0–10):", String(s.intensity||0));
+    if(intensity === null) return;
+    const fever = prompt("Febre? (yes/no):", s.fever||"no");
+    if(fever === null) return;
+    const notes = prompt("Notas:", s.notes||"");
+    if(notes === null) return;
+
+    s.intensity = Math.max(0, Math.min(10, Number(intensity||0)));
+    s.fever = (String(fever).toLowerCase().includes("y") ? "yes" : "no");
+    s.notes = notes.trim();
+    save();
+    renderHome(); renderSymList();
+  }
+
+  function deleteSym(id){
+    if(!confirm("Excluir este registro de sintomas?")) return;
+    state.logs.symptoms = state.logs.symptoms.filter(x=>x.id!==id);
+    save();
+    renderHome(); renderSymList();
+  }
+
+  // ---------- CRUD: Poop ----------
+  function addPoop(){
+    const date = $("poopDate").value || nowISODate();
+    const time = $("poopTime").value || nowISOTime();
+    const bristol = $("bristol").value;
+    const strain = $("strain").value;
+    const pain = $("painPoop").value;
+    const blood = $("blood").value;
+    const notes = ($("poopNotes").value || "").trim();
+
+    state.logs.poops.push({
+      id: uid(),
+      dt: `${date}T${time}`,
+      bristol, strain, pain, blood, notes
+    });
+    save();
+
+    $("poopNotes").value = "";
+    renderHome(); renderPoopList();
+  }
+
+  function editPoop(id){
+    const p = state.logs.poops.find(x=>x.id===id);
+    if(!p) return;
+
+    const br = prompt("Bristol (1-7):", String(p.bristol));
+    if(br === null) return;
+    const strain = prompt("Esforço? (yes/no):", p.strain);
+    if(strain === null) return;
+    const pain = prompt("Dor? (yes/no):", p.pain);
+    if(pain === null) return;
+    const blood = prompt("Sangue? (yes/no):", p.blood);
+    if(blood === null) return;
+    const notes = prompt("Notas:", p.notes||"");
+    if(notes === null) return;
+
+    p.bristol = Math.max(1, Math.min(7, Number(br||p.bristol)));
+    p.strain = (String(strain).toLowerCase().includes("y") ? "yes" : "no");
+    p.pain = (String(pain).toLowerCase().includes("y") ? "yes" : "no");
+    p.blood = (String(blood).toLowerCase().includes("y") ? "yes" : "no");
+    p.notes = notes.trim();
+
+    save();
+    renderHome(); renderPoopList();
+  }
+
+  function deletePoop(id){
+    if(!confirm("Excluir este registro de evacuação?")) return;
+    state.logs.poops = state.logs.poops.filter(x=>x.id!==id);
+    save();
+    renderHome(); renderPoopList();
+  }
+
+  // ---------- CRUD: Crisis ----------
+  function addCrisis(){
+    const sd = $("crisisStartDate").value || nowISODate();
+    const st = $("crisisStartTime").value || nowISOTime();
+    const ed = $("crisisEndDate").value || "";
+    const et = $("crisisEndTime").value || "";
+    const pain = Number($("crisisPain").value || 0);
+    const fever = $("crisisFever").value || "no";
+    const meds = ($("crisisMeds").value || "").trim();
+    const hydration = $("crisisHydration").value || "ok";
+    const during = ($("crisisDuring").value || "").trim();
+    const trigger = ($("crisisTrigger").value || "").trim();
+
+    const start = `${sd}T${st}`;
+    const end = (ed && et) ? `${ed}T${et}` : "";
+
+    state.logs.crises.push({
+      id: uid(),
+      start, end,
+      pain, fever,
+      meds, hydration,
+      during, trigger
+    });
+    save();
+
+    $("crisisEndDate").value = "";
+    $("crisisEndTime").value = "";
+    $("crisisPain").value = "";
+    $("crisisFever").value = "no";
+    $("crisisMeds").value = "";
+    $("crisisDuring").value = "";
+    $("crisisTrigger").value = "";
+
+    renderHome(); renderCrisisList();
+  }
+
+  function editCrisis(id){
+    const c = state.logs.crises.find(x=>x.id===id);
+    if(!c) return;
+
+    const pain = prompt("Dor máxima (0–10):", String(c.pain||0));
+    if(pain === null) return;
+    const fever = prompt("Febre? (yes/no):", c.fever||"no");
+    if(fever === null) return;
+    const meds = prompt("Remédios:", c.meds||"");
+    if(meds === null) return;
+    const trigger = prompt("Gatilho:", c.trigger||"");
+    if(trigger === null) return;
+
+    c.pain = Math.max(0, Math.min(10, Number(pain||0)));
+    c.fever = (String(fever).toLowerCase().includes("y") ? "yes" : "no");
+    c.meds = meds.trim();
+    c.trigger = trigger.trim();
+    save();
+    renderHome(); renderCrisisList();
+  }
+
+  function deleteCrisis(id){
+    if(!confirm("Excluir esta crise?")) return;
+    state.logs.crises = state.logs.crises.filter(x=>x.id!==id);
+    save();
+    renderHome(); renderCrisisList();
+  }
+
+  // ---------- Settings: Food DB ----------
+  function addFoodDb(){
+    const name = ($("newFoodName").value||"").trim();
+    const risk = $("newFoodRisk").value;
+    const tags = ($("newFoodTags").value||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!name){ alert("Coloque o nome do alimento."); return; }
+    if(findFoodInDb(name)){ alert("Esse alimento já existe no banco."); return; }
+
+    state.foodDb.push({name, risk, tags, note:"Personalizado por você."});
+    save();
+    $("newFoodName").value="";
+    $("newFoodTags").value="";
+    renderFoodDb();
+  }
+
+  function deleteFoodDb(name){
+    if(!confirm("Excluir do banco de alimentos?")) return;
+    state.foodDb = state.foodDb.filter(x=>x.name.toLowerCase() !== name.toLowerCase());
+    save();
+    renderFoodDb();
+  }
+
+  // ---------- Settings: Sym items ----------
+  function addSymItem(){
+    const s = ($("newSymItem").value||"").trim();
+    if(!s) return;
+    if(state.symItems.some(x=>x.toLowerCase()===s.toLowerCase())){
+      alert("Esse item já existe.");
+      return;
+    }
+    state.symItems.push(s);
+    save();
+    $("newSymItem").value="";
+    renderSymItems();
+    renderSymChecklist();
+  }
+  function deleteSymItem(idx){
+    if(!confirm("Excluir este sintoma do checklist?")) return;
+    state.symItems.splice(idx,1);
+    save();
+    renderSymItems();
+    renderSymChecklist();
+  }
+
+  // ---------- Quick logs ----------
+  function saveQuick(){
+    const type = $("quickType").value;
+    const when = $("quickWhen").value;
+    const text = ($("quickText").value||"").trim();
+    if(!when || !text){ alert("Preencha data/hora e texto."); return; }
+    state.logs.quick.push({id:uid(), type, when, text});
+    save();
+    $("quickText").value="";
+    renderQuickList();
+  }
+  function deleteQuick(id){
+    if(!confirm("Excluir este registro rápido?")) return;
+    state.logs.quick = state.logs.quick.filter(x=>x.id!==id);
+    save();
+    renderQuickList();
+  }
+
+  // ---------- Backup ----------
+  function exportJSON(){
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `diverticontrol-backup-${nowISODate()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importJSON(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const obj = JSON.parse(reader.result);
+        // minimal validation
+        if(!obj || !obj.logs) throw new Error("Arquivo inválido.");
+        Object.assign(state, obj);
+        save();
+        renderAll();
+        alert("Importado com sucesso.");
+      } catch(e){
+        alert("Falha ao importar: " + e.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+  function resetAll(){
+    if(!confirm("Isso apaga tudo. Tem certeza?")) return;
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+
+  // ---------- Tabs ----------
+  function showTab(name){
+    ["home","food","symptoms","poop","crisis","guide","settings"].forEach(t=>{
+      const sec = $(`tab-${t}`);
+      if(sec) sec.classList.toggle("hide", t!==name);
+    });
+    document.querySelectorAll(".tab").forEach(el=>{
+      el.classList.toggle("active", el.dataset.tab===name);
+    });
+  }
+
+  // ---------- Events ----------
+  function attachEvents(){
+    document.querySelectorAll(".tab").forEach(t=>{
+      t.addEventListener("click", ()=> showTab(t.dataset.tab));
+    });
+
+    $("addFoodBtn").addEventListener("click", addFood);
+    $("addSymBtn").addEventListener("click", addSymptoms);
+    $("addPoopBtn").addEventListener("click", addPoop);
+    $("addCrisisBtn").addEventListener("click", addCrisis);
+
+    $("addFoodDbBtn").addEventListener("click", addFoodDb);
+    $("addSymItemBtn").addEventListener("click", addSymItem);
+
+    $("exportBtn").addEventListener("click", exportJSON);
+    $("importBtn").addEventListener("click", ()=> $("importFile").click());
+    $("importFile").addEventListener("change", (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(f) importJSON(f);
+      e.target.value = "";
+    });
+    $("resetBtn").addEventListener("click", resetAll);
+
+    $("saveQuickBtn").addEventListener("click", saveQuick);
+
+    $("quickAddBtn").addEventListener("click", ()=>{
+      showTab("settings");
+      $("quickText").focus();
+    });
+
+    // delegation for edit/delete buttons
+    document.addEventListener("click", (e)=>{
+      const t = e.target;
+      if(!(t instanceof HTMLElement)) return;
+
+      const df = t.getAttribute("data-del-food");
+      const ef = t.getAttribute("data-edit-food");
+      if(df) return deleteFood(df);
+      if(ef) return editFood(ef);
+
+      const ds = t.getAttribute("data-del-sym");
+      const es = t.getAttribute("data-edit-sym");
+      if(ds) return deleteSym(ds);
+      if(es) return editSym(es);
+
+      const dp = t.getAttribute("data-del-poop");
+      const ep = t.getAttribute("data-edit-poop");
+      if(dp) return deletePoop(dp);
+      if(ep) return editPoop(ep);
+
+      const dc = t.getAttribute("data-del-crisis");
+      const ec = t.getAttribute("data-edit-crisis");
+      if(dc) return deleteCrisis(dc);
+      if(ec) return editCrisis(ec);
+
+      const dfd = t.getAttribute("data-del-fooddb");
+      if(dfd) return deleteFoodDb(dfd);
+
+      const dsi = t.getAttribute("data-del-symitem");
+      if(dsi !== null && dsi !== undefined){
+        const idx = Number(dsi);
+        if(!Number.isNaN(idx)) return deleteSymItem(idx);
+      }
+
+      const dq = t.getAttribute("data-del-quick");
+      if(dq) return deleteQuick(dq);
+    });
+  }
+
+  // ---------- Escape HTML ----------
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  // ---------- Init ----------
+  function init(){
+    setDefaults();
+    setupFoodAutocomplete();
+    attachEvents();
+    renderAll();
+
+    // refresh home risk label every ~30s (e.g., constipation window)
+    setInterval(()=>{ renderHome(); }, 30000);
+  }
+
+  init();
+
+})();
+</script>
+</body>
+</html>
